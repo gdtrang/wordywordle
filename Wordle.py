@@ -10,7 +10,7 @@ class Tip(Enum):
     CORRECT = auto()
 
 
-def score(secret, guess):
+def score(secret, guess) -> list[Tip]:
     # All characters that are not correct go into the usable pool.
     pool = collections.Counter(s for s, g in zip(secret, guess) if s != g)
     # Create a first tentative score by comparing char by char.
