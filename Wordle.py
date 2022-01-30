@@ -8,6 +8,7 @@ class Tip(Enum):
     MISSING = auto()
     WRONG_LOC = auto()
     CORRECT = auto()
+    UNKNOWN_VALUE = auto()
 
 
 def score(secret, guess) -> list[Tip]:

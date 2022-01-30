@@ -14,7 +14,6 @@ first_guess = "rebut"
 all_correct = [Tip.CORRECT, Tip.CORRECT, Tip.CORRECT, Tip.CORRECT, Tip.CORRECT]
 
 for word in answers:
-    # wordle = Wordle("tuber")
     wordle = Wordle(word)
     solver = Solver()
     num_guesses = 1
@@ -31,12 +30,14 @@ for word in answers:
 
     if num_guesses >= num_guesses_for_hardest_word:
         hardest_word = wordle.answer
+        num_guesses_for_hardest_word = num_guesses
     if num_guesses > 7:
         num_guesses = 7  # is a loss
     guess_count[num_guesses - 1] += 1
+
 print(guess_count)
 print("--- %s seconds ---" % (time.time() - start_time))
-print(f"the hardest word was: {hardest_word}")
-# [  1  39 189 438 615 522 511]
-# --- 12.554895639419556 seconds ---
-# the hardest word was: shave
+print(f"the hardest word was: {hardest_word} with {num_guesses_for_hardest_word} guesses")
+# [  1 106 585 937 493 154  39]
+# --- 44.235442876815796 seconds ---
+# the hardest word was: mover with 9 guesses

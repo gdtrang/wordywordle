@@ -5,7 +5,7 @@ all_correct = [Tip.CORRECT, Tip.CORRECT, Tip.CORRECT, Tip.CORRECT, Tip.CORRECT]
 
 if __name__ == '__main__':
     # wordle = Wordle("tuber")
-    wordle = Wordle()
+    wordle = Wordle("humph")
     solver = Solver()
     num_guesses = 1
     random_guess = "rebut"
@@ -19,8 +19,8 @@ if __name__ == '__main__':
         if tips != all_correct:
             num_guesses += 1
             random_guess = solver.random_guess()
+            # print(f"answers remaining: {solver.remaining_answers()}")
         # print(solver.valid_solutions_df)
-        # print(f"answers remaining: {solver.remaining_answers()}")
 
     print(f"answer is: {wordle.answer}")
     print(f"guesses required: {num_guesses}")
