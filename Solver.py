@@ -1,25 +1,23 @@
 import pandas as pd
 
 from Wordle import Tip
-from words import answers, guesses
+from words import answers
 
 
 def replace_char_at_position(string, position, character) -> str:
     return string[:position] + character + string[position + 1:]
 
 
+all_correct = [Tip.CORRECT, Tip.CORRECT, Tip.CORRECT, Tip.CORRECT, Tip.CORRECT]
+
+
 class Solver:
     def __init__(self):
         self.valid_solutions_df = pd.DataFrame(answers)
         self.valid_solutions_df.columns = ["word"]
-        self.valid_guesses_df = pd.DataFrame(guesses)
-        self.valid_guesses_df.columns = ["word"]
-        self.all_df = pd.concat([self.valid_solutions_df, self.valid_guesses_df])
-        self.num_answers = len(answers)
-        self.all_guesses = len(self.all_df)
 
         self.missing_letters = set([])
-        self.known_letters = set([])  # loosely used
+        self.known_letters = set([])
         self.known_letter_and_location = set([])
         self.known_pattern = r"....."
 
@@ -35,40 +33,26 @@ class Solver:
             if tip == Tip.CORRECT:
                 self.known_letter_and_location.add(char)
                 self.known_pattern = replace_char_at_position(self.known_pattern, i, char)
-                self.valid_solutions_df = self.valid_solutions_df.loc[self.valid_solutions_df.word.str.match(
-                    self.known_pattern)]
             elif tip == Tip.WRONG_LOC:
-                self.known_letters.add(char)
                 #  remove words with letter at this location
+                self.known_letters.add(char)
                 pattern = replace_char_at_position(self.known_pattern, i, f"[^{char}]")
-                # remove missing letter
                 self.valid_solutions_df = self.valid_solutions_df.loc[self.valid_solutions_df.word.str.match(pattern)]
-                # remove words without this letter (unnecessary?)
+                # remove words without this letter
                 self.valid_solutions_df = self.valid_solutions_df.query(f"word.str.contains('{char}')", engine='python')
         # Separated out missing because guesses like "kappa" against "humph" would note that p is missing first
-        # So it word remove "humph"
+        # So it would remove "humph"
         for i, (tip, char) in enumerate(zip(tips, guess_word)):
             if tip == Tip.MISSING:
                 if char not in self.known_letters and char not in self.known_letter_and_location:
-                    if char not in self.missing_letters:
-                        self.valid_solutions_df = self.valid_solutions_df.query(f"word.str.contains('{char}') == False",
-                                                                                engine='python')
                     self.missing_letters.add(char)
 
-        missing_letters_joined = "".join(self.missing_letters)
+        #  Remove words with letters not in correct position
         pattern = self.known_pattern
+        missing_letters_joined = "".join(self.missing_letters)
         if self.missing_letters:  # is not empty
-            pattern = self.known_pattern.replace(".", f"[^{missing_letters_joined}]")
-
-        # print(f"regex pattern: {pattern}")
-        remaining_answers = self.remaining_answers()
-        valid_solutions_df_before_match = self.valid_solutions_df
+            pattern = pattern.replace(".", f"[^{missing_letters_joined}]")
         self.valid_solutions_df = self.valid_solutions_df.loc[self.valid_solutions_df.word.str.match(pattern)]
-        if self.remaining_answers() != remaining_answers:
-            print(f"regex pattern: {pattern}")
-            print("something is wrong")
-            print(valid_solutions_df_before_match)
-            print(self.valid_solutions_df)
 
         if self.remaining_answers() == 0:
             raise Exception("no possible answers are remaining")
@@ -76,11 +60,23 @@ class Solver:
             self.valid_solutions_df = self.valid_solutions_df.loc[self.valid_solutions_df["word"] != guess_word]
         if remaining_answers_at_start == self.remaining_answers():
             print(f"was given {guess_word} and it had no improvement and there are {self.remaining_answers()} remaining")
-            print(tips)
 
     #  quick helper functions
     def random_guess(self) -> str:
         return self.valid_solutions_df.sample(1).word.values[0]
+
+    def letter_elimination_guess(self) -> str:
+        known_letters_set = set.union(self.known_letters, self.known_letter_and_location)
+        letters = "|".join(known_letters_set)
+        fewer_words_all = self.valid_solutions_df.query(f"word.str.contains('{letters}') == False", engine='python')
+        letters = "|".join(self.known_letter_and_location)
+        fewer_words_some = self.valid_solutions_df.query(f"word.str.contains('{letters}') == False", engine='python')
+        if fewer_words_all.shape[0] > 0:
+            return fewer_words_all.sample(1).word.values[0]
+        elif fewer_words_some.shape[0] > 0:
+            return fewer_words_some.sample(1).word.values[0]
+        else:
+            return self.random_guess()
 
     def remaining_answers(self):
         return self.valid_solutions_df.shape[0]

@@ -27,6 +27,7 @@ for word in answers:
         if tips != all_correct:
             num_guesses += 1
             random_guess = solver.random_guess()
+            # random_guess = solver.letter_elimination_guess()
 
     if num_guesses >= num_guesses_for_hardest_word:
         hardest_word = wordle.answer
